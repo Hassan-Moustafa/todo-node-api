@@ -121,7 +121,8 @@ app.use((req,res,next) => {
     }).catch(e => {
         res.status(401).send(e);
     });
-})
+});
+
 app.get('/users/me' , (req,res) => {
     res.status(200).send(req.user);
 })

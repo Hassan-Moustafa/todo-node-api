@@ -61,20 +61,37 @@ userSchema.methods.generateAuthToken = function() {
 
 }
 
+userSchema.methods.removeToken = function (token){
+
+    let user = this;
+    return user.update({
+        $pull:{
+            tokens:{
+                token: token
+            }
+        }
+
+    })
+}
+
 userSchema.statics.findByToken = function (token)
 {
     var User = this;
     var decoded;
     try{
         decoded = jwt.verify(token , 'abc123');
+        
         if(decoded === undefined)
         {
             return Promise.reject();
         }
     }catch(e)
     {
+        
         return Promise.reject();
     }
+
+    
 
     return User.findOne({
         _id: decoded._id,
@@ -114,9 +131,9 @@ userSchema.statics.verifyUser = function (userData) {
         bcrypt.compare(userData.password , user.password , (error , result) => {
             if(result)
             {
-                return resolve({result : true});
+                return resolve(user);
             }
-            return resolve({result: false});
+            return reject({result: false});
         })
     })
 

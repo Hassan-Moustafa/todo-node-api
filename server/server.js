@@ -5,6 +5,7 @@ let express = require('express');
 let bodyParser = require('body-parser');
 let _ = require('lodash');
 let {ObjectID} = require('mongodb');
+let {authenticate} = require('./middleware/authenticate');
 
 let app = express();
 
@@ -107,39 +108,37 @@ app.post('/users' , (req,res) => {
 });
 
 
-app.use('/users/me' , (req,res,next) => {
 
-    console.log('authenticating ... ');
-    let token = req.header('x-auth');
-    
-    User.findByToken(token).then((user) => {
-        if(!user)
-        {
-            return res.status(401).send();
-        }
-        req.user = user;
-        next();
-    }).catch(e => {
-        res.status(401).send(e);
-    });
-});
-
-app.get('/users/me' , (req,res) => {
+app.get('/users/me' , authenticate , (req,res) => {
     res.status(200).send(req.user);
-})
+});
 
 app.post('/users/login' , (req , res) => {
 
     let body = _.pick(req.body , ['email' , 'password']);
 
-    User.verifyUser(body).then((result) => {
-        res.send(result);
+    User.verifyUser(body).then((user) => {
+        return user.generateAuthToken().then(token => {
+            res.header('x-auth' , token).send(user);
+        })
+        
     }).catch((error) => {
         res.send(error);
     })
 
     
+});
+
+app.delete('/users/me/logout' , authenticate , (req,res) => {
+
+        let user = req.user;
+        user.removeToken(req.token).then(() => {
+            res.status(200).send();
+        }).catch((error) => {
+            res.status(404).send(error);
+        })
 })
+
 
 app.listen(3000 , () => {
     console.log('starting server');

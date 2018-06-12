@@ -93,6 +93,19 @@ app.delete('/todos/:id' , (req,res) => {
     })
 })
 
+app.post('/users' , (req,res) => {
+    let body = _.pick(req.body , ['email' , 'password']);
+    let newUser = new User(body);
+
+    newUser.save().then(() => {
+        return newUser.generateAuthToken();
+    }).then((token) => {
+        res.header('x-auth',token).send(newUser);
+    }).catch((error) => {
+        res.status(400).send(error);
+    })
+})
+
 app.listen(3000 , () => {
     console.log('starting server');
 })

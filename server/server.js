@@ -104,6 +104,26 @@ app.post('/users' , (req,res) => {
     }).catch((error) => {
         res.status(400).send(error);
     })
+});
+
+
+app.use((req,res,next) => {
+
+    let token = req.header('x-auth');
+    
+    User.findByToken(token).then((user) => {
+        if(!user)
+        {
+            return res.status(401).send();
+        }
+        req.user = user;
+        next();
+    }).catch(e => {
+        res.status(401).send(e);
+    });
+})
+app.get('/users/me' , (req,res) => {
+    res.status(200).send(req.user);
 })
 
 app.listen(3000 , () => {

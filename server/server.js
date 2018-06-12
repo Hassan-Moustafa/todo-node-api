@@ -107,8 +107,9 @@ app.post('/users' , (req,res) => {
 });
 
 
-app.use((req,res,next) => {
+app.use('/users/me' , (req,res,next) => {
 
+    console.log('authenticating ... ');
     let token = req.header('x-auth');
     
     User.findByToken(token).then((user) => {
@@ -125,6 +126,19 @@ app.use((req,res,next) => {
 
 app.get('/users/me' , (req,res) => {
     res.status(200).send(req.user);
+})
+
+app.post('/users/login' , (req , res) => {
+
+    let body = _.pick(req.body , ['email' , 'password']);
+
+    User.verifyUser(body).then((result) => {
+        res.send(result);
+    }).catch((error) => {
+        res.send(error);
+    })
+
+    
 })
 
 app.listen(3000 , () => {

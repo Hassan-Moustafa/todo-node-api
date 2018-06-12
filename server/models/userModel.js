@@ -99,6 +99,32 @@ userSchema.pre('save' , function (next) {
     }
 });
 
+userSchema.statics.verifyUser = function (userData) {
+    
+    return new Promise((resolve , reject) => {
+
+        let User = this;
+        User.findOne({email : userData.email}).then((user) => {
+        
+        if(!user)
+        {
+            return reject({error : 'email or password is incorrect'});  
+        }
+
+        bcrypt.compare(userData.password , user.password , (error , result) => {
+            if(result)
+            {
+                return resolve({result : true});
+            }
+            return resolve({result: false});
+        })
+    })
+
+
+    })
+    
+}
+
 let User = mongoose.model('User',userSchema);
 
 module.exports = {

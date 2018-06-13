@@ -1,3 +1,5 @@
+require('./config/config.js');
+
 let {mongoose} = require('./db/mongoose');
 let {User} = require('./models/userModel');
 let {Todo} = require('./models/todoModel');

@@ -11,9 +11,10 @@ let app = express();
 
 app.use(bodyParser.json());
 
-app.post('/todos', (req,res) => {
+app.post('/todos', authenticate ,(req,res) => {
     let newTodo = new Todo({
-        text: req.body.text
+        text: req.body.text,
+        _creator: req.user._id
     });
 
     newTodo.save().then((doc) => {
@@ -23,22 +24,25 @@ app.post('/todos', (req,res) => {
     })
 });
 
-app.get('/todos', (req,res) => {
-    Todo.find().then((todos) => {
+app.get('/todos', authenticate , (req,res) => {
+    Todo.find({_creator : req.user._id}).then((todos) => {
         return res.status(200).send({ _todos: todos });
     }).catch((error) => {
         return res.status(400).send(error);
     })
 });
 
-app.get('/todos/:id' , (req,res) => {
+app.get('/todos/:id' , authenticate, (req,res) => {
     let id = req.params.id;
     if(!ObjectID.isValid(id))
     {
         return res.status(400).send({error : 'id is not valid'});
     }
-
-    Todo.findById(id).then((todo) => {
+    
+    Todo.findOne({
+        _id: id,
+        _creator: req.user._id
+    }).then((todo) => {
         if(!todo)
         {
             return res.status(400).send({error : 'todo not found'});
@@ -49,7 +53,7 @@ app.get('/todos/:id' , (req,res) => {
     })
 });
 
-app.patch('/todos/:id' , (req,res) => {
+app.patch('/todos/:id' , authenticate , (req,res) => {
     let id  = req.params.id;
     if(!ObjectID.isValid(id))
     {
@@ -58,7 +62,11 @@ app.patch('/todos/:id' , (req,res) => {
 
     let body = _.pick(req.body , ['text' , 'completed']);
 
-    Todo.findByIdAndUpdate(id,{
+    
+    Todo.findOneAndUpdate({
+        _id : id,
+        _creator : req.user._id
+    },{
         $set: body
     },
     {
@@ -75,14 +83,17 @@ app.patch('/todos/:id' , (req,res) => {
 
 });
 
-app.delete('/todos/:id' , (req,res) => {
+app.delete('/todos/:id' , authenticate, (req,res) => {
     let id  = req.params.id;
     if(!ObjectID.isValid(id))
     {
         return res.status(400).send({error : 'id is not valid'});
     }
 
-    Todo.findByIdAndRemove(id).then((result) => {
+    Todo.findOneAndRemove({
+        _id: id,
+        _creator: req.user._id
+    }).then((result) => {
         if(!result)
         {
             return res.status(404).send({error : 'id is not found'})
@@ -92,7 +103,7 @@ app.delete('/todos/:id' , (req,res) => {
         return res.status(400).send(error);
 
     })
-})
+});
 
 app.post('/users' , (req,res) => {
     let body = _.pick(req.body , ['email' , 'password']);
@@ -106,8 +117,6 @@ app.post('/users' , (req,res) => {
         res.status(400).send(error);
     })
 });
-
-
 
 app.get('/users/me' , authenticate , (req,res) => {
     res.status(200).send(req.user);
